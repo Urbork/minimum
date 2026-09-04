@@ -67,7 +67,7 @@
 <body>
   <canvas id="trail"></canvas>
   <h1>minimum</h1>
-  <button id="clear" type="button" title="Wyczyść ślad (Esc)">wyczyść ślad</button>
+  <button id="clear" type="button" title="Wyczyść ślad (Esc) — przytrzymaj Q, aby wstrzymać rysowanie">wyczyść ślad</button>
 
   <script>
     (function () {
@@ -77,6 +77,7 @@
       var dpr = Math.min(window.devicePixelRatio || 1, 2);
       var last = null;
       var enabled = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var paused = false;
 
       function clear() {
         ctx.save();
@@ -97,6 +98,10 @@
       }
 
       function draw(x, y) {
+        if (paused) {
+          last = null;
+          return;
+        }
         if (last) {
           var dx = x - last.x;
           var dy = y - last.y;
@@ -128,6 +133,15 @@
       });
       document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') clear();
+        // przytrzymanie Q wstrzymuje rysowanie śladu
+        if (e.key === 'q' || e.key === 'Q') paused = true;
+      });
+      document.addEventListener('keyup', function (e) {
+        if (e.key === 'q' || e.key === 'Q') paused = false;
+      });
+      // po utracie fokusu keyup nie dotrze — nie zostawiaj wstrzymania na stałe
+      window.addEventListener('blur', function () {
+        paused = false;
       });
 
       resize();
