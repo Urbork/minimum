@@ -9,9 +9,10 @@
       color-scheme: light dark;
       --bg: #fafaf8;
       --fg: #1a1a1a;
+      --line: rgba(26, 26, 26, 0.25);
     }
     @media (prefers-color-scheme: dark) {
-      :root { --bg: #111110; --fg: #f2f2ef; }
+      :root { --bg: #111110; --fg: #f2f2ef; --line: rgba(242, 242, 239, 0.3); }
     }
     * { box-sizing: border-box; }
     body {
@@ -39,21 +40,51 @@
       /* dzięki temu biały ślad jest widoczny na jasnym i ciemnym tle */
       mix-blend-mode: difference;
     }
+    #clear {
+      position: fixed;
+      right: 1.25rem;
+      bottom: 1.25rem;
+      z-index: 2;
+      padding: 0.5rem 0.9rem;
+      font: inherit;
+      font-size: 0.8125rem;
+      letter-spacing: 0.02em;
+      color: var(--fg);
+      background: transparent;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      cursor: pointer;
+      opacity: 0.55;
+      transition: opacity 0.2s ease, border-color 0.2s ease;
+    }
+    #clear:hover,
+    #clear:focus-visible {
+      opacity: 1;
+      border-color: currentColor;
+    }
   </style>
 </head>
 <body>
   <canvas id="trail"></canvas>
   <h1>minimum</h1>
+  <button id="clear" type="button" title="Wyczyść ślad (Esc)">wyczyść ślad</button>
 
   <script>
     (function () {
-      var reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
-      if (reduce.matches) return;
-
       var canvas = document.getElementById('trail');
+      var button = document.getElementById('clear');
       var ctx = canvas.getContext('2d');
       var dpr = Math.min(window.devicePixelRatio || 1, 2);
       var last = null;
+      var enabled = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      function clear() {
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.restore();
+        last = null;
+      }
 
       function resize() {
         canvas.width = Math.floor(window.innerWidth * dpr);
@@ -91,7 +122,19 @@
         requestAnimationFrame(fade);
       }
 
+      button.addEventListener('click', function () {
+        clear();
+        button.blur();
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') clear();
+      });
+
+      resize();
       window.addEventListener('resize', resize);
+
+      if (!enabled) return;
+
       window.addEventListener('pointermove', function (e) {
         draw(e.clientX, e.clientY);
       }, { passive: true });
@@ -102,7 +145,6 @@
         last = null;
       });
 
-      resize();
       requestAnimationFrame(fade);
     })();
   </script>
